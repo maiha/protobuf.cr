@@ -7,7 +7,7 @@ module Protobuf
       _generate_decoder {{syntax}}
       _generate_encoder {{syntax}}
       _generate_getters_setters
-      _generate_hash_getters
+      _generate_hash_getters_setters
     end
 
     macro contract(&blk)
@@ -195,11 +195,26 @@ module Protobuf
       {% end %}
     end
 
-    macro _generate_hash_getters
+    macro _generate_hash_getters_setters
       def [](key : String)
         case key
         {% for tag, field in FIELDS %}
           when {{field[:name].id.stringify}} ; self.{{field[:name].id}}
+        {% end %}
+        else
+          raise Protobuf::Error.new("Field not found: `#{key}`")
+        end
+      end
+
+      def []=(key : String, val)
+        case key
+        {% for tag, field in FIELDS %}
+          when {{field[:name].id.stringify}} ; self.{{field[:name].id}} =
+            if val.is_a?({{field[:cast_type].id}})
+              (val).as({{field[:cast_type].id}})
+            else
+              raise ArgumentError.new({{field[:name].id.stringify}} + " expected `" + {{field[:cast_type].id.stringify}} + "`, but got `#{val.class}`")
+            end
         {% end %}
         else
           raise Protobuf::Error.new("Field not found: `#{key}`")
