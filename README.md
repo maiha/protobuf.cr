@@ -67,6 +67,11 @@ some_io = IO::Memory.new
 msg.to_protobuf(some_io) # fills up the provided IO with the encoded message
 ```
 
+#### JSON friendly
+
+`from_json` is also available.
+See [spec/protobuf/from_json_spec.cr](./spec/protobuf/from_json_spec.cr) for details.
+
 #### Field types
 
 All field types supported by the protobuf protocol v2 are available as symbols or the name of a Crysta; struct or class.
