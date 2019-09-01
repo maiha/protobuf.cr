@@ -5,6 +5,7 @@ module Protobuf
       {{yield}}
       _generate_decoder {{syntax}}
       _generate_encoder {{syntax}}
+      _generate_from_json {{syntax}}
       _generate_getters_setters
       _generate_hash_accessors
     end
@@ -188,6 +189,18 @@ module Protobuf
       end
     end
 
+    macro _generate_from_json(pbVer)
+      {% if FIELDS.size > 0 %}
+      JSON.mapping({
+        {% for tag, field in FIELDS %}
+          {% name = field[:name].id %}
+          {% type = field[:cast_type] %}
+          {{name}}: {{type}},
+        {% end %}
+      })
+      {% end %}
+    end
+    
     macro _generate_getters_setters
       {% for tag, field in FIELDS %}
         property {{field[:name].id}} : {{field[:cast_type]}}
