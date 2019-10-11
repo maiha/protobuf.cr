@@ -1,7 +1,17 @@
 module Protobuf
   module Message
+    record Field,
+           name : String,
+           type : String,
+           pb_type : String,
+           native : Bool,
+           optional : Bool,
+           repeated : Bool,
+           packed : Bool
+
     macro contract_of (syntax, &blk)
       FIELDS = {} of Int32 => HashLiteral(Symbol, ASTNode)
+      Fields = {} of String => Field
       {{yield}}
       _generate_decoder {{syntax}}
       _generate_encoder {{syntax}}
@@ -17,18 +27,35 @@ module Protobuf
     macro _add_field(tag, name, pb_type, options = {} of Symbol => Bool)
       {%
         t = Protobuf::PB_TYPE_MAP[pb_type] || pb_type
+
+        native   = !!Protobuf::PB_TYPE_MAP[pb_type]
+        optional = !!options[:optional] || !!options[:repeated]
+        repeated = !!options[:repeated]
+        default  = options[:default]
+        packed   = !!options[:packed]
+
         FIELDS[tag] = {
           name:         name,
           pb_type:      pb_type,
           crystal_type: t,
           cast_type:    options[:repeated] ? "Array(#{t})?".id : options[:optional] ? "#{t}?".id : t.id,
-          native:       !!Protobuf::PB_TYPE_MAP[pb_type],
-          optional:     !!options[:optional] || !!options[:repeated],
-          repeated:     !!options[:repeated],
-          default:      options[:default],
-          packed:       !!options[:packed],
+          native:       native,
+          optional:     optional,
+          repeated:     repeated,
+          default:      default,
+          packed:       packed,
         }
       %}
+
+      Fields[{{name.id.stringify}}] = Field.new(
+          name:         {{name.id.stringify}},
+          type:         {{t.id.stringify}},
+          pb_type:      {{pb_type.id.stringify}},
+          native:       {{native}},
+          optional:     {{optional}},
+          repeated:     {{repeated}},
+          packed:       {{packed}},
+      )
     end
 
     macro optional(name, type, tag, default = nil, repeated = false, packed = false)
