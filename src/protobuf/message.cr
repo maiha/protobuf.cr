@@ -216,6 +216,12 @@ module Protobuf
         raise ::Protobuf::Error.new("Field not found: `#{key}`")
       end
 
+      def []?(key : String)
+        self[key]
+      rescue Protobuf::Error
+        nil
+      end
+
       def []=(key : String, val)
         {% for tag, field in FIELDS %}
           if {{field[:name].id.stringify}} == key
