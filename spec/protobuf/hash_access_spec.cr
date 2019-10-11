@@ -32,6 +32,31 @@ describe Protobuf::Message do
     end
   end
 
+  describe "#[key]?" do
+    context "when the key is a member" do
+      it "acts as #key" do
+        File.open("#{__DIR__}/../fixtures/test.data.encoded") do |io|
+          test = Test.from_protobuf(io)
+          test["f1"]?.should eq("dsfadsafsaf")
+        end
+      end
+    end
+
+    it "works if no fields" do
+      empty = EmptyMessage.new
+      empty["blah"]?.should eq(nil)
+    end
+
+    context "when the key is not a member" do
+      it "returns nil" do
+        File.open("#{__DIR__}/../fixtures/test.data.encoded") do |io|
+          test = Test.from_protobuf(io)
+          test["XX"]?.should eq(nil)
+        end
+      end
+    end
+  end
+
   describe "#[key]=(val)" do
     context "when the key is a member and the val type is valid" do
       it "acts as #key=" do
