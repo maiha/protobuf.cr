@@ -111,6 +111,19 @@ The generator is configurable via environment variables:
 - `PROTOBUF_NS` - If your want to namespace everything under a module (default: `""`). Please write with a CamelCase format (ie: `"MesosMessage"` would produce `module MesosMessage`)
 - `STRIP_FROM_PACKAGE` - Protobuf has package namespaces and sometimes messages reference other namespaces (ie: `mesos.v1.scheduler.Call`), but you want those to be namespaced in a Crystal-like fashion (ie: `Scheduler::Call`), then you can specify a string to strip from the packages for each file (ie: `STRIP_FROM_PACKAGE=mesos.v1`) and the rest will be CamelCased
 
+## [experimental] Usage (dynamic schema)
+
+By using `Protobuf::Schema`, you can bypass the generator and handle dynamic schema files directly.
+
+```crystal
+schema = Protobuf::Schema.parse(schema_string)
+hash = schema.from_protobuf(io)
+hash["f1"] # => "dsfadsafsaf"
+```
+
+- support only native types
+- doesn't support enum
+
 ## Known Limitations
 
 - Does not support non-UTF8 strings...
