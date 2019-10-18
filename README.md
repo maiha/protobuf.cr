@@ -124,6 +124,22 @@ hash["f1"] # => "dsfadsafsaf"
 - support only native types
 - doesn't support enum
 
+## [experimental] Usage (schema-less decoding)
+
+```crystal
+Protobuf.decode("08 01")                # => {1 => 1}
+Protobuf.decode("08 01 08 02")          # => {1 => [1,2]}
+Protobuf.decode("0a 03 66 6f 6f 10 14") # => {1 => "foo", 2 => 20}
+```
+
+The default wire strategy is 0: `unit64`, 1: `double`, 2: `string`, 5: `float`.
+You can control it by second arg.
+
+```crystal
+Protobuf.decode("08 01")                # => {1 => 1}
+Protobuf.decode("08 01", {0 => "bool"}) # => {1 => true}
+```
+
 ## Known Limitations
 
 - Does not support non-UTF8 strings...
