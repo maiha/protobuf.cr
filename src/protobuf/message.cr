@@ -245,7 +245,7 @@ module Protobuf
 
       def []?(key : String)
         self[key]
-      rescue Protobuf::Error
+      rescue ::Protobuf::Error
         nil
       end
 
@@ -261,7 +261,7 @@ module Protobuf
           end
         {% end %}
 
-        raise Protobuf::Error.new("Field not found: `#{key}`")
+        raise ::Protobuf::Error.new("Field not found: `#{key}`")
       end
 
       def to_hash
