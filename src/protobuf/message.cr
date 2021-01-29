@@ -281,7 +281,7 @@ module Protobuf
 
     IncludedNames = [] of String
     macro included
-      {% Protobuf::Message::IncludedNames << @type.stringify if !(@type.stringify =~ /^Protobuf::/) %}
+      {% ::Protobuf::Message::IncludedNames << @type.stringify if !(@type.stringify =~ /^Protobuf::/) %}
     end
   end
 end
