@@ -218,13 +218,22 @@ module Protobuf
 
     macro _generate_from_json(pbVer)
       {% if FIELDS.size > 0 %}
-      JSON.mapping({
-        {% for tag, field in FIELDS %}
-          {% name = field[:name].id %}
-          {% type = field[:cast_type] %}
-          {{name}}: {{type}},
+        {% if compare_versions(Crystal::VERSION, "0.35.0") >= 0 %}
+          include JSON::Serializable
+          {% for tag, field in FIELDS %}
+            {% name = field[:name].id %}
+            {% type = field[:cast_type] %}
+            property {{name}} : {{type}}
+          {% end %}
+        {% else %}
+          JSON.mapping({
+          {% for tag, field in FIELDS %}
+            {% name = field[:name].id %}
+            {% type = field[:cast_type] %}
+            {{name}}: {{type}},
+          {% end %}
+          })
         {% end %}
-      })
       {% end %}
     end
     
