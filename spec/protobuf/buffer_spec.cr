@@ -142,4 +142,46 @@ describe Protobuf::Buffer do
       buf.read_double.should eq(20.0855369)
     end
   end
+
+  describe "#write_string" do
+    it "raises Error with context for invalid UTF-8 (CESU-8 surrogate)" do
+      io = IO::Memory.new
+      buf = Protobuf::Buffer.new(io)
+
+      # String with CESU-8 (surrogate pair encoded as UTF-8)
+      invalid_str = "hello " + String.new(Bytes[0xed, 0xa0, 0x80, 0xed, 0xb4, 0x81]) + " world"
+
+      ex = expect_raises(Protobuf::Error) do
+        buf.write_string(invalid_str)
+      end
+      ex.message.not_nil!.should contain("Invalid UTF-8 at byte")
+      ex.message.not_nil!.should contain("\\xed\\xa0\\x80")
+    end
+
+    it "raises Error with context for invalid byte sequence" do
+      io = IO::Memory.new
+      buf = Protobuf::Buffer.new(io)
+
+      # String with invalid continuation byte
+      invalid_str = "hello" + String.new(Bytes[0x80, 0x81]) + "world"
+
+      ex = expect_raises(Protobuf::Error) do
+        buf.write_string(invalid_str)
+      end
+      ex.message.not_nil!.should contain("Invalid UTF-8 at byte")
+      ex.message.not_nil!.should contain("\\x80")
+    end
+
+    it "writes valid UTF-8 string successfully" do
+      io = IO::Memory.new
+      buf = Protobuf::Buffer.new(io)
+
+      buf.write_string("Hello world")
+      io.rewind
+
+      # Read back: first varint length, then string bytes
+      read_buf = Protobuf::Buffer.new(io)
+      read_buf.read_string.should eq("Hello world")
+    end
+  end
 end

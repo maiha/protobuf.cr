@@ -155,6 +155,70 @@ module Protobuf
 
     def write_string(str : String)
       write_bytes(str.encode("UTF-8"))
+    rescue e : ArgumentError
+      if e.message.try(&.includes?("Invalid multibyte sequence"))
+        pos, context = build_invalid_utf8_context(str)
+        raise Error.new("Invalid UTF-8 at byte #{pos}: #{context}")
+      else
+        raise e
+      end
+    end
+
+    # Builds an error context string for invalid UTF-8 sequences.
+    # Returns {byte_position, context_string}.
+    #
+    # Example output:
+    #   {6, "\"hello \\xed\\xa0\\x80\\xed\\xb4\\x81 world\""}
+    private def build_invalid_utf8_context(str : String, window : Int32 = 20) : {Int32, String}
+      # Find first invalid byte position using Char::Reader
+      invalid_pos = 0
+      reader = Char::Reader.new(str)
+      while reader.has_next?
+        if reader.current_char == Char::REPLACEMENT
+          invalid_pos = reader.pos
+          break
+        end
+        reader.next_char
+      end
+
+      # Calculate byte range for context
+      start_byte = {invalid_pos - window, 0}.max
+      end_byte = {invalid_pos + window, str.bytesize - 1}.min
+
+      # Build context with \xNN escaping for invalid bytes
+      context = String.build do |io|
+        io << "\"..." if start_byte > 0
+        io << "\"" if start_byte == 0
+
+        reader = Char::Reader.new(str)
+        while reader.pos < start_byte && reader.has_next?
+          reader.next_char
+        end
+
+        while reader.pos <= end_byte && reader.has_next?
+          char = reader.current_char
+          current_pos = reader.pos
+          reader.next_char
+          next_pos = reader.has_next? ? reader.pos : str.bytesize
+
+          if char == Char::REPLACEMENT
+            # Output all bytes that were skipped as \xNN
+            (current_pos...next_pos).each do |i|
+              io << "\\x" << str.byte_at(i).to_s(16).rjust(2, '0')
+            end
+          elsif char.ord < 0x20 || char.ord == 0x7f
+            # Control characters
+            io << "\\x" << char.ord.to_s(16).rjust(2, '0')
+          else
+            io << char
+          end
+        end
+
+        io << "..." if end_byte < str.bytesize - 1
+        io << "\""
+      end
+
+      {invalid_pos, context}
     end
 
     def write_fixed32(n : UInt32)
