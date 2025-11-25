@@ -1,0 +1,56 @@
+name: Spec
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        crystal:
+          - 1.18.2
+          - 0.36.1
+          - 0.33.0
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install crenv
+      run: |
+        git clone https://github.com/crenv/crenv.git ~/.crenv
+        git clone https://github.com/crenv/crystal-build.git ~/.crenv/plugins/crystal-build
+        echo "$HOME/.crenv/bin" >> $GITHUB_PATH
+        echo "$HOME/.crenv/shims" >> $GITHUB_PATH
+
+    - name: Install Crystal ${{ matrix.crystal }}
+      run: |
+        export PATH="$HOME/.crenv/bin:$PATH"
+        eval "$(crenv init -)"
+        crenv install ${{ matrix.crystal }}
+        crenv global ${{ matrix.crystal }}
+
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+
+    - name: Install dependencies and build codegen
+      run: |
+        export PATH="$HOME/.crenv/bin:$HOME/.crenv/shims:$PATH"
+        shards build
+
+    - name: Run crystal spec
+      run: |
+        export PATH="$HOME/.crenv/bin:$HOME/.crenv/shims:$PATH"
+        crystal spec
