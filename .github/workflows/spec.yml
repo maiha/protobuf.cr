@@ -1,0 +1,42 @@
+name: Spec
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - 'LICENSE'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        crystal:
+          - 1.18.2
+          - 0.33.0
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: ${{ matrix.crystal }}
+
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+
+    - name: Install dependencies and build codegen
+      run: shards build
+
+    - name: Run crystal spec
+      run: crystal spec
